@@ -60,7 +60,7 @@ Integrating these fields allows the project to examine emotional symptoms and co
 
 ### 2.3 Faculty Discussions and Their Contributions
 
-In meetings with Dr. Joseph Kable and Dr. Michael Platt, I discussed the project's research question and how to make the most of the available dataset. One important consideration raised by Dr. Platt was the comorbidity of depression and anxiety. Because these symptoms frequently co-occur, examining them separately could overlook their shared variation when investigating associations with cognitive performance.
+In my meetings with Dr. Joseph Kable and Dr. Michael Platt, I discussed the project's research question and how to make the most of the available dataset. One important consideration raised by Dr. Platt was the comorbidity of depression and anxiety. Because these symptoms frequently co-occur, examining them separately could overlook their shared variation when investigating associations with cognitive performance.
 
 This discussion informed the decision to include both PHQ-9 and GAD-7 scores in the same multiple linear regression models. This approach allows the analysis to estimate the association of each symptom measure with cognitive outcomes while accounting for the other symptom measure, as well as age and sex. Additionally, because the dataset consists of healthy research volunteers, the project focuses on variation in symptom scores rather than comparing individuals with clinical diagnoses against healthy controls.
 
