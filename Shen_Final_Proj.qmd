@@ -1,0 +1,558 @@
+---
+title: "Depressive and Anxiety Symptoms in Relation to Memory and Executive Functioning"
+subtitle: "BMIN5030 Final Project"
+author: "Fiona Shen"
+format: html
+editor: visual
+number-sections: true
+embed-resources: true
+---
+
+------------------------------------------------------------------------
+
+Use this template to complete your project throughout the course. Your Final Project presentation will be based on the contents of this document. Replace the title/name above and text below with your own, but keep the headers. Feel free to change the theme and other display settings, although this is not required.
+
+## Overview {#sec-overview}
+
+**Project Goal:** The primary objective of this project is to examine whether depressive and anxiety symptom severity is associated with memory and executive-function performance among healthy adults. Although depression and anxiety are commonly studied in clinical populations, individuals without diagnosed psychiatric disorders also vary in their levels of depressive and anxiety symptoms. By examining these variations alongside standardized cognitive assessments, this project aims to better understand the relationship between emotional well-being and cognitive functioning in nonclinical populations.
+
+**Motivation:** Depression and anxiety frequently co-occur and may have overlapping associations with cognitive functioning. However, examining these symptoms independently may not fully capture their individual associations with cognition because they share variation. Understanding whether depressive and anxiety symptoms are independently associated with memory and executive functioning may provide insight into how emotional symptoms relate to different cognitive abilities, even among individuals without clinical diagnoses.
+
+**Data Source:** This project utilizes the NIMH Healthy Research Volunteer Dataset (ds005752), publicly available through the OpenNeuro repository. Four phenotype tables were used: the Patient Health Questionnaire-9 (PHQ-9), Generalized Anxiety Disorder-7 (GAD-7), NIH Toolbox cognitive assessments, and demographic information. The PHQ-9 and GAD-7 were used to calculate total depressive and anxiety symptom scores, respectively. Cognitive performance was assessed using the NIH Toolbox Picture Sequence Memory test and Flanker Inhibitory Control and Attention test, representing memory and executive functioning.
+
+**Faculty Consultations:**
+
+1.  **Dr. Joseph Kable:** We discussed the research question and how to approach the analysis using the available dataset, including how to examine relationships between psychological symptoms and cognitive performance.
+
+2.  **Dr. Michael Platt:** We discussed the potential comorbidity of depression and anxiety. His suggestion informed my decision to include both PHQ-9 and GAD-7 scores in the same regression models, allowing me to examine the association of each symptom measure with cognitive performance while accounting for the other.
+
+**Analytic Strategy:**
+
+- Calculate total PHQ-9 and GAD-7 scores by summing their respective questionnaire items, and extract age-corrected NIH Toolbox memory and executive-function scores.
+
+- Combine questionnaire, cognitive assessment, and demographic data by matching participant identifiers and visit information, and examine missing values before conducting complete-case analysis.
+
+- Use descriptive statistics and scatterplots to characterize symptom severity and visualize relationships between psychological symptoms and cognitive performance.
+
+- Apply Pearson correlation analyses to examine bivariate associations between depressive and anxiety symptoms and each cognitive outcome.
+
+- Fit multiple linear regression models to examine the individual associations of PHQ-9 and GAD-7 scores with memory and executive functioning while accounting for the other symptom measure and demographic variables.
+
+**GitHub repository:** <https://github.com/fionayr/BMIN5030_Final_Project>
+
+## Introduction {#sec-introduction}
+
+Describe the problem addressed, its significance, and some background to motivate the problem. This should extend what is in the @sec-overview. Explain why your problem is interdisciplinary, what fields can contribute to its understanding, and incorporate background related to what you learned from meeting with faculty/staff.
+
+### 2.1 Background and Significance
+
+Depression and anxiety symptoms can affect daily functioning, and cognitive processes such as memory and executive functioning are important for learning, planning, attention, and decision-making. Although clinically significant depression and anxiety are often studied in patient populations, symptom severity can vary even among adults who do not have a diagnosed psychiatric disorder. Examining whether differences in depressive and anxiety symptoms are associated with differences in cognitive performance among healthy adults may help clarify whether these dimensions of emotional well-being covary with cognition outside clinical samples.
+
+Depression and anxiety frequently co-occur, making it important to consider their potentially overlapping associations with cognitive performance. Examining these symptoms together may provide a more complete understanding of how each relates to cognition, rather than attributing an observed association to one symptom dimension when it may partly reflect their shared variation.
+
+In this project, memory is measured using the NIH Toolbox Picture Sequence Memory score, and executive functioning is approximated using the NIH Toolbox Flanker Inhibitory Control and Attention score. Depressive symptoms are measured using the Patient Health Questionnaire-9 (PHQ-9), and anxiety symptoms are measured using the Generalized Anxiety Disorder-7 (GAD-7). By examining these measures together, this project investigates whether variation in depressive and anxiety symptoms is associated with differences in memory and executive-function performance among healthy adults.
+
+### 2.2 Interdisciplinary Approach
+
+This question is interdisciplinary because it connects clinical psychology and psychiatry with cognitive neuroscience, behavioral science, and data science. Psychology and psychiatry provide validated symptom measures and theoretical frameworks for understanding depression and anxiety. Cognitive neuroscience helps define and measure cognitive processes such as memory and executive control, as well as their potential relationships with emotional functioning. Biostatistics and data science make it possible to combine questionnaire and cognitive data, quantify associations, visualize patterns, and adjust for potential confounding variables such as age and sex.
+
+Integrating these fields allows the project to examine emotional symptoms and cognitive performance from both psychological and quantitative perspectives. In particular, statistical modeling provides a way to investigate whether depressive and anxiety symptoms are independently associated with cognitive outcomes while accounting for their overlap.
+
+### 2.3 Faculty Discussions and Their Contributions
+
+In meetings with Dr. Joseph Kable and Dr. Michael Platt, I discussed the project's research question and how to make the most of the available dataset. One important consideration raised by Dr. Platt was the comorbidity of depression and anxiety. Because these symptoms frequently co-occur, examining them separately could overlook their shared variation when investigating associations with cognitive performance.
+
+This discussion informed the decision to include both PHQ-9 and GAD-7 scores in the same multiple linear regression models. This approach allows the analysis to estimate the association of each symptom measure with cognitive outcomes while accounting for the other symptom measure, as well as age and sex. Additionally, because the dataset consists of healthy research volunteers, the project focuses on variation in symptom scores rather than comparing individuals with clinical diagnoses against healthy controls.
+
+## Methods {#sec-methods}
+
+Describe the data used and general methodological approach used to address the problem described in the @sec-introduction. Subsequently, incorporate full R code necessary to retrieve and clean data, and perform analysis. Be sure to include a description of code so that others (including your future self) can understand what you are doing and why.
+
+The project will use four phenotype tables from the OpenNeuro NIMH Healthy Research Volunteer Dataset (`ds005752`): PHQ-9 items, GAD-7 items, NIH Toolbox scores, and demographics. The data will be read directly from their hosted TSV files in R. The PHQ-9 and GAD-7 totals will be calculated by summing their respective item scores after converting the dataset's `-999` missing-value code to `NA`. The cognitive outcomes will be the age-corrected Picture Sequence Memory and Flanker Inhibitory Control and Attention scores. Age and sex/gender will be included as covariates if their fields are available and usable in the selected visit.
+
+### 3.1 Loading Packages and Retrieving Data
+
+The `tidyverse` package is used for importing, cleaning, and manipulating data, as well as creating visualizations. The four phenotype tables are retrieved directly from OpenNeuro using their hosted TSV file URLs. The dataset's -999 missing-value code is converted to NA during import.
+
+```{r}
+# Load tidyverse for data import, cleaning, and manipulation
+library(tidyverse)
+
+# Store the URLs for the four phenotype tables
+phq9_url <- "https://s3.amazonaws.com/openneuro.org/ds005752/phenotype/phq9.tsv?versionId=bim.irppqbyHEu1WmfEh287b.ygWdov1"
+
+gad7_url <- "https://s3.amazonaws.com/openneuro.org/ds005752/phenotype/gad7.tsv?versionId=f28oMdWMHYSftS2EifsOKprJCjYJrBIV"
+
+nih_url <- "https://s3.amazonaws.com/openneuro.org/ds005752/phenotype/nih_toolbox.tsv?versionId=uI9jnZRTbAeoGSAyDCAR1E1bLtVCvX1q"
+
+demo_url <- "https://s3.amazonaws.com/openneuro.org/ds005752/phenotype/demographics.tsv?versionId=QrdR11nQm6CNiqPaBpm7kdmiT5psqHu7"
+
+# Read the tables and treat -999 as a missing value
+phq9 <- read.delim(phq9_url, na.strings = "-999")
+gad7 <- read.delim(gad7_url, na.strings = "-999")
+nih <- read.delim(nih_url, na.strings = "-999")
+demo <- read.delim(demo_url, na.strings = "-999")
+
+# Inspect column names to confirm the required variables are present
+names(phq9)
+names(gad7)
+names(nih)
+names(demo)
+
+# Check the number of observations at each visit
+# This helps identify repeated measurements
+table(phq9$visit, useNA = "ifany")
+table(gad7$visit, useNA = "ifany")
+table(nih$visit, useNA = "ifany")
+table(demo$visit, useNA = "ifany")
+```
+
+### 3.2 Data Preparation and Scoring
+
+PHQ-9 and GAD-7 total scores are calculated by summing their respective questionnaire items. A total score is assigned only when all items are available, ensuring that incomplete questionnaires are not treated as complete assessments. The symptom, cognition, and demographic tables are then combined using participant ID and visit. The age-corrected NIH Toolbox Picture Sequence Memory and Flanker scores are extracted as the two cognitive outcomes. Age and sex are extracted from the demographic table. Because the demographic table uses different visit labels, these labels are recoded to match the assessment visit labels before the tables are combined.
+
+```{r}
+# List the nine items used to calculate the PHQ-9 depression score
+phq_items <- c(
+  "LITTLE_INTEREST",
+  "FEELING_DOWN",
+  "TROUBLE_SLEEPING",
+  "FEELING_TIRED",
+  "POOR_APPETITE",
+  "FEELING_BAD",
+  "TROUBLE_CONCENTRATING",
+  "MOVING_OR_SPEAKING",
+  "BETTER_OFF_DEAD"
+)
+
+# List the seven items used to calculate the GAD-7 anxiety score
+gad_items <- c(
+  "NERVOUS",
+  "ANXIETY_WORRY",
+  "WORRY",
+  "RELAX",
+  "RESTLESS",
+  "IRRITATED",
+  "AFRAID"
+)
+
+# Calculate PHQ-9 total scores
+# Calculate a total only when all nine items are available
+phq9_scored <- phq9 %>%
+  mutate(
+    across(all_of(phq_items), as.numeric),
+    PHQ9 = if_else(
+      if_all(all_of(phq_items), ~ !is.na(.x)),
+      rowSums(across(all_of(phq_items))),
+      NA_real_
+    )
+  ) %>%
+  select(participant_id, visit, PHQ9)
+
+# Calculate GAD-7 total scores
+# Calculate a total only when all seven items are available
+gad7_scored <- gad7 %>%
+  mutate(
+    across(all_of(gad_items), as.numeric),
+    GAD7 = if_else(
+      if_all(all_of(gad_items), ~ !is.na(.x)),
+      rowSums(across(all_of(gad_items))),
+      NA_real_
+    )
+  ) %>%
+  select(participant_id, visit, GAD7)
+
+# Extract memory and executive-function measures from the NIH Toolbox table
+nih_scored <- nih %>%
+  transmute(
+    participant_id,
+    visit,
+    Memory = as.numeric(PIC_SEQ_MEM_TEST_AGE_CRECTD),
+    ExecutiveFunction = as.numeric(FLANKER_INHIB_CTL_ATTN_AGE_CRE)
+  )
+
+# Extract age and sex from the demographics table
+demo_scored <- demo %>%
+  transmute(
+    participant_id,
+    visit,
+    Age = as.numeric(age_at_visit),
+    Sex = GENDER
+  )
+
+# Match demographic visit labels to assessment visit labels
+demo_matched <- demo_scored %>%
+  mutate(
+    visit = recode(
+      visit,
+      "online screening" = "baseline",
+      "re-eval online screening" = "re-evaluation"
+    )
+  ) %>%
+  select(participant_id, visit, Age, Sex)
+```
+
+### 3.3 Dataset Combining and Cleaning
+
+The PHQ-9, GAD-7, and NIH Toolbox tables are combined using inner joins based on participant ID and visit. Demographic information is subsequently added using a left join. This ensures that symptom scores, cognitive assessments, and demographic information correspond to the same participant and assessment visit while preserving observations with missing demographic information.
+
+Missing values are examined before creating the final complete-case dataset. The number of observations, unique participants, and missing values for each analysis variable are summarized. Duplicate demographic records are also examined to identify potential issues that could affect the dataset joins. Finally, observations with missing PHQ-9 scores, GAD-7 scores, cognitive outcomes, age, or sex are excluded using complete-case analysis.
+
+```{r}
+# Combine PHQ-9, GAD-7, NIH Toolbox, and demographic data
+analysis_data <- phq9_scored %>%
+  inner_join(
+    gad7_scored,
+    by = c("participant_id", "visit")
+  ) %>%
+  inner_join(
+    nih_scored,
+    by = c("participant_id", "visit")
+  ) %>%
+  left_join(
+    demo_matched,
+    by = c("participant_id", "visit")
+  )
+
+# Check the number of observations at each visit
+analysis_data %>%
+  count(visit, sort = TRUE)
+
+# Check the number of participants and observations in the combined dataset
+analysis_data %>%
+  summarise(
+    total_rows = n(),
+    total_participants = n_distinct(participant_id)
+  )
+
+# Check for participants with multiple demographic records
+duplicate_participants <- demo_scored %>%
+  count(participant_id) %>%
+  filter(n > 1) %>%
+  pull(participant_id)
+
+# Examine demographic records for participants with duplicate IDs
+demo_scored %>%
+  filter(participant_id %in% duplicate_participants) %>%
+  select(participant_id, visit, Age, Sex) %>%
+  arrange(participant_id, visit)
+
+# Compare age and sex across demographic records for duplicate participants
+demo_scored %>%
+  filter(participant_id %in% duplicate_participants) %>%
+  group_by(participant_id) %>%
+  summarise(
+    n_records = n(),
+    n_ages = n_distinct(Age, na.rm = TRUE),
+    n_sexes = n_distinct(Sex, na.rm = TRUE),
+    visits = paste(visit, collapse = ", "),
+    .groups = "drop"
+  )
+
+# Check the number of demographic records for each visit
+demo_scored %>%
+  count(visit, sort = TRUE)
+
+# Check for age values that could not be converted to numeric
+demo %>%
+  filter(
+    is.na(suppressWarnings(as.numeric(age_at_visit))) &
+      !is.na(age_at_visit)
+  ) %>%
+  count(age_at_visit, sort = TRUE)
+
+# Check the number of missing values in each analysis variable
+analysis_data %>%
+  summarise(
+    total_rows = n(),
+    missing_PHQ9 = sum(is.na(PHQ9)),
+    missing_GAD7 = sum(is.na(GAD7)),
+    missing_Memory = sum(is.na(Memory)),
+    missing_ExecutiveFunction = sum(is.na(ExecutiveFunction)),
+    missing_Age = sum(is.na(Age)),
+    missing_Sex = sum(is.na(Sex))
+  )
+
+# Create the complete-case dataset by removing observations
+# with missing values in any analysis variable
+analysis_complete <- analysis_data %>%
+  drop_na(
+    PHQ9,
+    GAD7,
+    Memory,
+    ExecutiveFunction,
+    Age,
+    Sex
+  )
+
+# Check the final number of complete observations and participants
+analysis_complete %>%
+  summarise(
+    total_rows = n(),
+    total_participants = n_distinct(participant_id)
+  )
+
+# Check the number of valid observations for each variable
+analysis_complete %>%
+  summarise(
+    across(
+      c(PHQ9, GAD7, Memory, ExecutiveFunction, Age, Sex),
+      ~ sum(!is.na(.x)),
+      .names = "valid_{.col}"
+    )
+  )
+```
+
+The code above assumes that the listed item and outcome column names match the hosted files. Confirm the names from the inspection step and adjust them if necessary. The scoring code calculates a total only when all items for that scale are observed, avoiding treating a partially completed scale as a complete score. The final analysis should use one prespecified visit per participant if multiple visits are available, unless repeated observations are intentionally analyzed with a method that accounts for within-participant dependence.
+
+## Results {#sec-results}
+
+Describe your results and include relevant tables, plots, and code/comments used to obtain them. You may refer to the @sec-methods as needed. End with a brief conclusion of your findings related to the question you set out to address. You can include references if you'd like, but this is not required.
+
+This section will be completed after the code is run and the outputs are checked. It will summarize the final sample size, descriptive statistics, correlation results, and regression estimates without making claims before the results are available.
+
+### 4.1 Descriptive Statistics and Visualizations
+
+Descriptive statistics, including means and standard deviations, are calculated for the symptom and cognitive measures.
+
+```{r}
+# Keep participants with complete data
+analysis_complete <- analysis_data %>%
+  drop_na(PHQ9, GAD7, Memory, ExecutiveFunction, Age, Sex)
+
+# Check sample size and variables
+print(nrow(analysis_complete))
+print(summary(analysis_complete$PHQ9))
+print(summary(analysis_complete$Memory))
+
+# Summary statistics
+analysis_complete %>%
+  summarise(
+    n = n(),
+    mean_PHQ9 = mean(PHQ9),
+    sd_PHQ9 = sd(PHQ9),
+    mean_GAD7 = mean(GAD7),
+    sd_GAD7 = sd(GAD7),
+    mean_Memory = mean(Memory),
+    sd_Memory = sd(Memory),
+    mean_ExecutiveFunction = mean(ExecutiveFunction),
+    sd_ExecutiveFunction = sd(ExecutiveFunction)
+  )
+```
+
+**Interpretation:** After excluding observations with missing values in the variables required for the analyses, the final complete-case sample consisted of 91 participants.
+
+Descriptive statistics were calculated for depressive symptoms, anxiety symptoms, memory performance, and executive-function performance. The mean PHQ-9 score was 0.82 (SD = 1.17), while the mean GAD-7 score was 0.69 (SD = 1.02). The mean Picture Sequence Memory score was 114.71 (SD = 18.20), and the mean Flanker Inhibitory Control and Attention score was 96.74 (SD = 15.53).
+
+PHQ-9 scores ranged from 0 to 5, indicating that depressive symptom scores were relatively low and had a restricted range in this sample.
+
+### 4.2 Scatterplot Visualizations
+
+4 scatterplots are then created to examine the relationships between depressive and anxiety symptoms and both cognitive outcomes.
+
+#### Figure 1. Depressive symptoms and memory performance
+
+```{r}
+# Scatterplot 1: Depression and memory
+p1 <- ggplot(
+  analysis_complete,
+  aes(x = PHQ9, y = Memory)
+) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(
+    x = "PHQ-9 depressive symptom score",
+    y = "NIH Toolbox Picture Sequence Memory score",
+    title = "Depressive Symptoms and Memory Performance"
+  ) +
+  theme_minimal()
+
+print(p1)
+
+```
+
+The regression line has a slight positive slope, suggesting that higher depressive symptom scores were associated with slightly higher memory scores in this sample. However, the points are widely dispersed around the regression line, indicating substantial variability in memory performance at each level of depressive symptoms. Most participants reported PHQ-9 scores of 0, while relatively few reported scores above 2.
+
+This visual pattern is consistent with the weak positive correlation observed between PHQ-9 and memory (r = .110, p = .300). The association was not statistically significant.
+
+#### Figure 2: Anxiety and Memory
+
+```{r}
+# Scatterplot 2: Anxiety and memory
+p3 <- ggplot(
+  analysis_complete,
+  aes(x = GAD7, y = Memory)
+) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(
+    method = "lm",
+    se = TRUE
+  ) +
+  labs(
+    x = "GAD-7 anxiety symptom score",
+    y = "NIH Toolbox Picture Sequence Memory score",
+    title = "Anxiety Symptoms and Memory Performance"
+  ) +
+  theme_minimal()
+
+# Display plot
+print(p3)
+
+```
+
+The scatterplot shows a nearly flat, slightly negative relationship between anxiety symptoms and memory performance. Considerable variability is observed across GAD-7 scores, suggesting little apparent association.
+
+#### Figure 3: Depression and executive functioning
+
+```{r}
+# Scatterplot 3: Depression and executive functioning
+p2 <- ggplot(
+  analysis_complete,
+  aes(x = PHQ9, y = ExecutiveFunction)
+) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(
+    method = "lm",
+    se = TRUE
+  ) +
+  labs(
+    x = "PHQ-9 depressive symptom score",
+    y = "NIH Toolbox Flanker Inhibitory Control and Attention score",
+    title = "Depressive Symptoms and Executive-Function Performance"
+  ) +
+  theme_minimal()
+
+# Display plot
+print(p2)
+
+```
+
+The scatterplot shows a slight positive trend between depressive symptoms and executive-function performance. However, considerable variability is observed across PHQ-9 scores, suggesting a weak association.
+
+#### Figure 4: Anxiety and Executive Function
+
+```{r}
+# Scatterplot 4: Anxiety and executive function
+p2 <- ggplot(
+  analysis_complete,
+  aes(x = GAD7, y = ExecutiveFunction)
+) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(
+    x = "GAD-7 anxiety symptom score",
+    y = "NIH Toolbox Flanker score",
+    title = "Anxiety Symptoms and Executive-Function Performance"
+  ) +
+  theme_minimal()
+
+print(p2)
+```
+
+The regression line also has a slight positive slope, suggesting that higher anxiety symptom scores were associated with slightly higher executive-function scores. However, there is considerable variability in scores, particularly at higher anxiety levels. Most participants reported GAD-7 scores of 0, with relatively few participants reporting scores above 3.
+
+This pattern is consistent with the weak positive correlation between GAD-7 and executive-function performance (r = .118, p = .264). This association was also not statistically significant.
+
+### 4.3 Pearson Correlation Analyses
+
+Pearson correlation tests are conducted to examine the strength and direction of the bivariate relationships between depressive symptoms, anxiety symptoms, and cognitive performance.
+
+```{r}
+# Define the variable pairs for correlation analyses
+correlation_pairs <- tribble(
+  ~symptom, ~outcome,
+  "PHQ9", "Memory",
+  "PHQ9", "ExecutiveFunction",
+  "GAD7", "Memory",
+  "GAD7", "ExecutiveFunction"
+)
+
+# Calculate Pearson correlations
+correlation_results <- correlation_pairs %>%
+  mutate(
+    test = map2(
+      symptom,
+      outcome,
+      ~ cor.test(
+        analysis_complete[[.x]],
+        analysis_complete[[.y]],
+        method = "pearson"
+      )
+    ),
+    r = map_dbl(test, ~ unname(.x$estimate)),
+    p_value = map_dbl(test, ~ .x$p.value)
+  ) %>%
+  select(symptom, outcome, r, p_value)
+
+print(correlation_results)
+```
+
+PHQ-9 scores were weakly positively correlated with memory performance (r = .110, p = .300) and executive-function performance (r = .100, p = .348). GAD-7 scores were weakly negatively correlated with memory performance (r = -.041, p = .701) and weakly positively correlated with executive-function performance (r = .118, p = .264).
+
+### 4.3 Multiple Linear Regression Analyses
+
+Two multiple linear regression models are fitted to examine the independent associations of depressive and anxiety symptoms with memory and executive functioning. Both models adjust for age and gender. The regression summaries provide coefficient estimates, standard errors, t-statistics, and p-values for each predictor. The R-squared values indicate the proportion of variance in each cognitive outcome explained by the model. Diagnostic plots are used to examine linearity, residual distribution, homoscedasticity, and potentially influential observations.
+
+```{r}
+# Model 1: Memory as the outcome
+memory_model <- lm(
+  Memory ~ PHQ9 + GAD7 + Age + Sex,
+  data = analysis_complete
+)
+
+# Model 2: Executive functioning as the outcome
+executive_model <- lm(
+  ExecutiveFunction ~ PHQ9 + GAD7 + Age + Sex,
+  data = analysis_complete
+)
+
+# Display regression summaries
+summary(memory_model)
+summary(executive_model)
+
+# Extract regression coefficients and p-values
+memory_results <- as.data.frame(
+  coef(summary(memory_model))
+)
+
+executive_results <- as.data.frame(
+  coef(summary(executive_model))
+)
+
+print(memory_results)
+print(executive_results)
+
+# Examine overall model fit
+summary(memory_model)$r.squared
+summary(executive_model)$r.squared
+
+# Examine regression model F-statistics
+summary(memory_model)$fstatistic
+summary(executive_model)$fstatistic
+
+# Assess model assumptions using diagnostic plots
+par(mfrow = c(2, 2))
+plot(memory_model)
+
+par(mfrow = c(2, 2))
+plot(executive_model)
+
+# Reset plotting layout
+par(mfrow = c(1, 1))
+```
+
+**Memory model.** The overall regression model was not statistically significant, F(4, 86) = 0.92, p = .454, and explained approximately 4.1% of the variance in memory scores (R² = .041). Neither PHQ-9 score (b = 1.90, p = .284) nor GAD-7 score (b = -1.33, p = .506) was a statistically significant predictor of memory performance.
+
+**Executive-function model.** The overall regression model was also not statistically significant, F(4, 86) = 0.57, p = .684, and explained approximately 2.6% of the variance in executive-function scores (R² = .026). Neither PHQ-9 score (b = 1.15, p = .451) nor GAD-7 score (b = 1.46, p = .399) was a statistically significant predictor of executive-function performance.
+
+Neither regression model was statistically significant. The results therefore did not provide statistically significant evidence that depressive or anxiety symptom severity was independently associated with memory or executive-function performance after accounting for the other symptom measure, age, and gender.
+
+## Conclusion
+
+This the conclusion. The @sec-results can be invoked here.
+
+### Summary of Findings
+
+This project examined whether depressive and anxiety symptom severity was associated with memory and executive-function performance among healthy research volunteers. Across both correlation and multiple linear regression analyses, neither symptom measure demonstrated a statistically significant association with either cognitive outcome.
+
+Although the observed associations were weak, the findings should be interpreted in the context of the sample. Participants generally reported low levels of depressive and anxiety symptoms, and the restricted range of symptom scores may have limited the ability to detect associations. Furthermore, because the dataset consisted of healthy research volunteers rather than individuals recruited specifically for depression or anxiety, the findings may not generalize to clinical populations.
