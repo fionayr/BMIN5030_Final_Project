@@ -1,19 +1,7 @@
-# BMIN5030 Final Project
+# BMIN5030 Final Project - Depressive and Anxiety Symptoms in Relation to Cognitive Functioning 
 
-This repository contains templates for the final written report and GitHub repository. Follow the instructions below to clone this repository, and then turn in your final project's code via a pull request to this repository.
+This repository contains the code for Fiona Shen's BMIN 5030 Final Project. This project aims to examine whether depressive and anxiety symptom severity are associated with memory and executive functioning in healthy adults. Depression and anxiety frequently co-occur and may be associated with differences in cognitive functioning. This project explores the independent associations of depressive and anxiety symptoms with cognitive performance, focusing on memory and executive functioning. 
 
-1. To start, **fork** this BMIN503_Final_Project repository.
-1. **Clone** the forked repository to your computer.
-1. Modify the files provided, add your own, and **commit** changes to complete your final project.
-1. **Push**/sync the changes up to your GitHub account.
-1. Create a **pull request** on this, the original BMIN503_Final_Project, repository to turn in your final project.
+The dataset used in this project is the NIMH Healthy Research Volunteer Dataset (ds005752), available through OpenNeuro. The data includes PHQ-9 and GAD-7 questionnaire scores measuring depressive and anxiety symptoms, respectively, NIH Toolbox measures of memory and executive functioning, and demographic information including age and sex.
 
-
-Follow the instructions [here][forking] if you are unsure what the above steps mean.
-
-DUE DATE FOR FINAL VERSION: 12/18/25 11:59PM EST. This is a hard deadline. Turn in whatever you have by this date.
-
-
-<!-- Links -->
-[forking]: https://guides.github.com/activities/forking/
 
