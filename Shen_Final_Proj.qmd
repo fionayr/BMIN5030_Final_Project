@@ -24,8 +24,6 @@ embed-resources: true
 
 1.  **Dr. Joseph Kable:** We discussed the research question and how to approach the analysis using the available dataset, including how to examine relationships between psychological symptoms and cognitive performance.
 
-<!-- TODO: add one sentence on what you took away from / changed after the Kable discussion (see Du's "I learned that..." style). -->
-
 2.  **Dr. Michael Platt:** We discussed the potential comorbidity of depression and anxiety. His suggestion informed my decision to include both PHQ-9 and GAD-7 scores in the same regression models, allowing me to examine the association of each symptom measure with cognitive performance while accounting for the other.
 
 **Analytic Strategy:**
